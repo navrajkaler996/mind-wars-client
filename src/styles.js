@@ -24,3 +24,21 @@ export const styles = {
   },
 };
 
+export const quizGameStyles =  {
+  bg: {
+    primary: 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900',
+  },
+  button: {
+    answer: 'w-full px-6 py-4 bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl font-semibold hover:bg-white/10 hover:border-purple-500/50 transition-all duration-300 text-left',
+    answerSelected: 'bg-purple-500/30 border-purple-500',
+    answerCorrect: 'bg-green-500/30 border-green-500',
+    answerWrong: 'bg-red-500/30 border-red-500',
+  },
+  card: {
+    base: 'bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10',
+  },
+  text: {
+    gradient: 'bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent',
+    muted: 'text-slate-400',
+  },
+};

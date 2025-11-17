@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Zap, Copy, Check, Users, Crown, UserPlus, Play } from 'lucide-react';
 import { styles } from '../styles';
 
 export default function WaitingRoom() {
+
+  const navigate = useNavigate()
+
   const { code } = useParams();
   const [roomCode, setRoomCode] = useState('');
   const [roomName, setRoomName] = useState('');
@@ -38,7 +41,13 @@ export default function WaitingRoom() {
   };
 
   const handleStartQuiz = () => {
-
+    navigate(`/quiz-game/${code}`, {
+      state: {
+        topic,
+        roomName,
+        numQuestions
+      }
+    });
   };
 
   const handleLeaveRoom = () => {
