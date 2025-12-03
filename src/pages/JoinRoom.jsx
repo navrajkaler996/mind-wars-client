@@ -1,45 +1,57 @@
-
-import React, { useState } from 'react';
-import { Zap, ArrowLeft, Sparkles, Hash, User, LogIn, AlertCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { styles } from '../styles';
+import React, { useState } from "react";
+import {
+  Zap,
+  ArrowLeft,
+  Sparkles,
+  Hash,
+  User,
+  LogIn,
+  AlertCircle,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { styles } from "../styles";
+import { joinRoom } from "../apis/roomApis";
 
 export default function JoinRoom() {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate()
-
-  const [roomCode, setRoomCode] = useState('');
-  const [playerName, setPlayerName] = useState('');
+  const [roomCode, setRoomCode] = useState("");
+  const [playerName, setPlayerName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleRoomCodeChange = (e) => {
-  
-    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
     setRoomCode(value.slice(0, 6));
-    setError('');
+    setError("");
   };
 
   const handleJoinRoom = async () => {
     if (!roomCode.trim() || !playerName.trim()) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
     if (roomCode.length !== 6) {
-      setError('Room code must be 6 characters');
+      setError("Room code must be 6 characters");
       return;
     }
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      // Check if room exists in storage
-      const roomData = localStorage.getItem(`room:${roomCode}`);
-      
+      const playerData = {
+        code: roomCode,
+        playerName,
+      };
+
+      const roomJoined = await joinRoom(playerData);
+
+      navigate(`/waiting-room/${roomCode}`);
+
       if (!roomData) {
-        setError('Room not found. Please check the code and try again.');
+        setError("Room not found. Please check the code and try again.");
         setLoading(false);
         return;
       }
@@ -48,14 +60,14 @@ export default function JoinRoom() {
 
       // Check if room is full
       if (room.players && room.players.length >= 8) {
-        setError('This room is full (8/8 players)');
+        setError("This room is full (8/8 players)");
         setLoading(false);
         return;
       }
 
       // Check if room has started
-      if (room.status === 'playing') {
-        setError('This quiz has already started');
+      if (room.status === "playing") {
+        setError("This quiz has already started");
         setLoading(false);
         return;
       }
@@ -74,19 +86,28 @@ export default function JoinRoom() {
 
       localStorage.setItem(`room:${roomCode}`, JSON.stringify(room));
 
-
       navigate(`/waiting-room/${roomCode}`);
-      
     } catch (error) {
-      console.error('Failed to join room:', error);
-      setError('Failed to join room. Please try again.');
+      console.error("Failed to join room:", error);
+      setError("Failed to join room. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const getRandomAvatar = () => {
-    const avatars = ['🎮', '🚀', '⚡', '🎯', '🔥', '⭐', '💎', '🎨', '🎭', '🎪'];
+    const avatars = [
+      "🎮",
+      "🚀",
+      "⚡",
+      "🎯",
+      "🔥",
+      "⭐",
+      "💎",
+      "🎨",
+      "🎭",
+      "🎪",
+    ];
     return avatars[Math.floor(Math.random() * avatars.length)];
   };
 
@@ -96,7 +117,8 @@ export default function JoinRoom() {
   };
 
   return (
-    <div className={`min-h-screen ${styles.bg.primary} text-white overflow-hidden relative`}>
+    <div
+      className={`min-h-screen ${styles.bg.primary} text-white overflow-hidden relative`}>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div className="absolute top-40 right-10 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse delay-700"></div>
@@ -114,10 +136,9 @@ export default function JoinRoom() {
                 MindWars
               </span>
             </div>
-            <button 
+            <button
               onClick={handleBack}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all duration-300 border border-white/20"
-            >
+              className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all duration-300 border border-white/20">
               <ArrowLeft className="w-4 h-4" />
               Back
             </button>
@@ -135,7 +156,8 @@ export default function JoinRoom() {
                 Enter the <span className={styles.text.gradient}>Arena</span>
               </h1>
               <p className={styles.text.muted}>
-                Enter the room code shared by your friend and jump into the quiz battle!
+                Enter the room code shared by your friend and jump into the quiz
+                battle!
               </p>
             </div>
 
@@ -150,8 +172,10 @@ export default function JoinRoom() {
                   value={roomCode}
                   onChange={handleRoomCodeChange}
                   placeholder="e.g., A3X9K2"
-                  className={`${styles.input.base} text-center text-2xl tracking-widest font-bold ${
-                    roomCode.length === 6 ? 'border-green-500' : ''
+                  className={`${
+                    styles.input.base
+                  } text-center text-2xl tracking-widest font-bold ${
+                    roomCode.length === 6 ? "border-green-500" : ""
                   }`}
                   maxLength={6}
                 />
@@ -170,7 +194,7 @@ export default function JoinRoom() {
                   value={playerName}
                   onChange={(e) => {
                     setPlayerName(e.target.value);
-                    setError('');
+                    setError("");
                   }}
                   placeholder="Enter your name"
                   className={styles.input.base}
@@ -185,7 +209,9 @@ export default function JoinRoom() {
                 <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <div className="text-red-300 font-semibold text-sm mb-1">Unable to Join</div>
+                    <div className="text-red-300 font-semibold text-sm mb-1">
+                      Unable to Join
+                    </div>
                     <div className="text-red-200 text-sm">{error}</div>
                   </div>
                 </div>
@@ -193,9 +219,13 @@ export default function JoinRoom() {
 
               <button
                 onClick={handleJoinRoom}
-                disabled={!roomCode.trim() || !playerName.trim() || loading || roomCode.length !== 6}
-                className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}
-              >
+                disabled={
+                  !roomCode.trim() ||
+                  !playerName.trim() ||
+                  loading ||
+                  roomCode.length !== 6
+                }
+                className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -227,7 +257,9 @@ export default function JoinRoom() {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-pink-400 font-bold">3.</span>
-                    <span>Click "Join Room" and wait for the quiz to start</span>
+                    <span>
+                      Click "Join Room" and wait for the quiz to start
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -249,11 +281,10 @@ export default function JoinRoom() {
             </div>
 
             <div className="mt-8 text-center">
-              <p className="text-slate-400 text-sm mb-3">Don't have a room code?</p>
-              <button 
-                onClick={handleBack}
-                className={styles.button.secondary}
-              >
+              <p className="text-slate-400 text-sm mb-3">
+                Don't have a room code?
+              </p>
+              <button onClick={handleBack} className={styles.button.secondary}>
                 Create Your Own Room
               </button>
             </div>
