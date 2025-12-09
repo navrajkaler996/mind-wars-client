@@ -29,9 +29,9 @@ export default function WaitingRoom() {
 
     const timer = setTimeout(() => {
       setShowMessage(false);
-    }, 30000); // 3 seconds
+    }, 30000);
 
-    return () => clearTimeout(timer); // cleanup
+    return () => clearTimeout(timer);
   }, [justJoinedPlayer]);
 
   useEffect(() => {
@@ -68,6 +68,21 @@ export default function WaitingRoom() {
     }
   }, [code]);
 
+  //When any user in the room starts quiz, everyone will be moved to the next page
+  useEffect(() => {
+    socket.on("quizStarted", ({ questions, topic, roomCode, id }) => {
+      console.log(roomCode, id);
+      //Navigate to quiz page for all players
+      navigate(`/quiz-game/${roomCode}`, {
+        state: { questions, topic, roomName, numQuestions, id },
+      });
+    });
+
+    return () => {
+      socket.off("quizStarted");
+    };
+  }, []);
+
   const copyRoomCode = () => {
     navigator.clipboard.writeText(roomCode);
     setCopied(true);
@@ -75,12 +90,11 @@ export default function WaitingRoom() {
   };
 
   const handleStartQuiz = () => {
-    navigate(`/quiz-game/${code}`, {
-      state: {
-        topic,
-        roomName,
-        numQuestions,
-      },
+    const roomId = id;
+
+    socket.emit("startQuiz", {
+      roomId,
+      roomCode,
     });
   };
 
