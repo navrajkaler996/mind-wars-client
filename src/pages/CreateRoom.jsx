@@ -42,10 +42,6 @@ export default function CreateRoom() {
       topic,
       numQuestions,
       playerName,
-      // createdAt: Date.now(),
-      // host: "You",
-      // players: [],
-      // status: "waiting",
     };
 
     try {
@@ -54,7 +50,6 @@ export default function CreateRoom() {
       const response = await createRoom(room);
       const createdRoom = response?.roomWithPlayers;
 
-      console.log("-0---", createdRoom);
       localStorage.setItem(`room:${createdRoom.code}`, JSON.stringify(room));
 
       navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`);

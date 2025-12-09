@@ -48,7 +48,11 @@ export default function JoinRoom() {
 
       const response = await joinRoom(playerData);
 
-      localStorage.setItem(`room:${roomCode}`, JSON.stringify(response));
+      //local storage is used in next page, i.e. CreateRoom to display data
+      localStorage.setItem(
+        `room:${roomCode}`,
+        JSON.stringify({ ...response, ...response?.room })
+      );
 
       navigate(`/waiting-room/${roomCode}/${response?.room?.id}`);
     } catch (error) {
