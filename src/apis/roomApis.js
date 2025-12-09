@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL_DEV;
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Create a new room
 export async function createRoom(roomData) {
