@@ -46,47 +46,11 @@ export default function JoinRoom() {
         playerName,
       };
 
-      const roomJoined = await joinRoom(playerData);
+      const response = await joinRoom(playerData);
 
-      navigate(`/waiting-room/${roomCode}`);
+      localStorage.setItem(`room:${roomCode}`, JSON.stringify(response));
 
-      if (!roomData) {
-        setError("Room not found. Please check the code and try again.");
-        setLoading(false);
-        return;
-      }
-
-      const room = JSON.parse(roomData);
-
-      // Check if room is full
-      if (room.players && room.players.length >= 8) {
-        setError("This room is full (8/8 players)");
-        setLoading(false);
-        return;
-      }
-
-      // Check if room has started
-      if (room.status === "playing") {
-        setError("This quiz has already started");
-        setLoading(false);
-        return;
-      }
-
-      // Add player to room
-      const newPlayer = {
-        id: Date.now(),
-        name: playerName,
-        isHost: false,
-        avatar: getRandomAvatar(),
-        joinedAt: Date.now(),
-      };
-
-      room.players = room.players || [];
-      room.players.push(newPlayer);
-
-      localStorage.setItem(`room:${roomCode}`, JSON.stringify(room));
-
-      navigate(`/waiting-room/${roomCode}`);
+      navigate(`/waiting-room/${roomCode}/${response?.room?.id}`);
     } catch (error) {
       console.error("Failed to join room:", error);
       setError("Failed to join room. Please try again.");

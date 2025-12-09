@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Zap, ArrowLeft, Sparkles, Hash, BookOpen, Users } from "lucide-react";
+import {
+  Zap,
+  ArrowLeft,
+  Sparkles,
+  Hash,
+  BookOpen,
+  Users,
+  LogIn,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { styles } from "../styles";
 import { createRoom } from "../apis/roomApis";
@@ -11,6 +19,7 @@ export default function CreateRoom() {
   const [roomName, setRoomName] = useState("");
   const [topic, setTopic] = useState("");
   const [numQuestions, setNumQuestions] = useState(10);
+  const [loading, setLoading] = useState(false);
 
   const questionOptions = [5, 10, 15, 20];
 
@@ -24,7 +33,8 @@ export default function CreateRoom() {
     return code;
   };
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
     if (!roomName.trim() || !topic.trim()) return;
 
     const room = {
@@ -39,14 +49,16 @@ export default function CreateRoom() {
     };
 
     try {
+      setLoading(true);
       // Create room on backend
-      const createdRoom = await createRoom(room);
+      const response = await createRoom(room);
+      const createdRoom = response?.roomWithPlayers;
 
-      console.log("Created room:", createdRoom);
+      console.log("-0---", createdRoom);
+      localStorage.setItem(`room:${createdRoom.code}`, JSON.stringify(room));
 
-      localStorage.setItem(`room:${createdRoom?.code}`, JSON.stringify(room));
-
-      navigate(`/waiting-room/${createdRoom?.code}`);
+      navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`);
+      setLoading(false);
     } catch (error) {
       console.error("Failed to create room:", error);
       alert("Failed to create room. Please try again.");
@@ -175,8 +187,18 @@ export default function CreateRoom() {
               <button
                 onClick={handleCreateRoom}
                 disabled={!roomName.trim() || !topic.trim()}
-                className={`w-full ${styles.button.primary} mt-6`}>
-                Create Room
+                className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
+                {loading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-5 h-5" />
+                    Create Room
+                  </>
+                )}
               </button>
             </div>
           </div>

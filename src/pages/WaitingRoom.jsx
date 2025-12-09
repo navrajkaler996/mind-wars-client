@@ -3,10 +3,14 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Zap, Copy, Check, Users, Crown, UserPlus, Play } from "lucide-react";
 import { styles } from "../styles";
 
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:3000");
+
 export default function WaitingRoom() {
   const navigate = useNavigate();
 
-  const { code } = useParams();
+  const { code, id } = useParams();
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("");
   const [playerName, setPlayername] = useState("");
@@ -14,6 +18,35 @@ export default function WaitingRoom() {
   const [numQuestions, setNumQuestions] = useState(10);
   const [copied, setCopied] = useState(false);
   const [players, setPlayers] = useState([]);
+  const [justJoinedPlayer, setJustJoinedPlayer] = useState();
+
+  const [showMessage, setShowMessage] = useState(false);
+
+  useEffect(() => {
+    if (!justJoinedPlayer) return;
+
+    setShowMessage(true);
+
+    const timer = setTimeout(() => {
+      setShowMessage(false);
+    }, 30000); // 3 seconds
+
+    return () => clearTimeout(timer); // cleanup
+  }, [justJoinedPlayer]);
+
+  useEffect(() => {
+    socket.emit("joinRoom", { id, playerName });
+
+    socket.on("updatePlayers", (waitingRoomData) => {
+      console.log("ran.....", waitingRoomData?.playersInRoom);
+      setPlayers(waitingRoomData?.playersInRoom);
+      setJustJoinedPlayer(waitingRoomData?.latestPlayer);
+    });
+
+    return () => {
+      socket.off("updatePlayers");
+    };
+  }, [id, playerName]);
 
   //Loading room data from storage
   useEffect(() => {
@@ -23,6 +56,7 @@ export default function WaitingRoom() {
       if (roomData) {
         try {
           const room = JSON.parse(roomData);
+
           setPlayername(room.playerName || "");
           setRoomName(room.roomName || "");
           setTopic(room.topic || "");
@@ -102,6 +136,18 @@ export default function WaitingRoom() {
                 Share the room code with your friends to start the quiz battle!
               </p>
             </div>
+            {showMessage && justJoinedPlayer && (
+              <div className="fixed bottom-6 right-6 z-50 animate-toast-slide">
+                <div
+                  className="relative px-6 py-3 rounded-xl bg-white/10 backdrop-blur-md 
+                    border border-white/20 shadow-xl text-white">
+                  <div className="absolute inset-0 bg-purple-500/20 blur-2xl -z-10" />
+                  <p className="font-semibold tracking-wide">
+                    {justJoinedPlayer} joined the room!
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1 space-y-6">
