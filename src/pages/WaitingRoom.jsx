@@ -95,6 +95,8 @@ export default function WaitingRoom() {
     socket.emit("startQuiz", {
       roomId,
       roomCode,
+      topic,
+      numQuestions,
     });
   };
 
