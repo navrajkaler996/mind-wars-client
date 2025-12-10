@@ -14,7 +14,7 @@ import { styles } from "../styles";
 
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
+const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
 export default function WaitingRoom() {
   const navigate = useNavigate();
@@ -87,6 +87,7 @@ export default function WaitingRoom() {
       navigate(`/quiz-game/${roomCode}`, {
         state: { questions, topic, roomName, numQuestions, id },
       });
+      setLoading(false);
     });
 
     return () => {
@@ -101,6 +102,7 @@ export default function WaitingRoom() {
   };
 
   const handleStartQuiz = () => {
+    console.log("----");
     setLoading(true);
 
     const roomId = id;
@@ -111,8 +113,9 @@ export default function WaitingRoom() {
       topic,
       numQuestions,
     });
-    setLoading(false);
   };
+
+  console.log(loading);
 
   const handleLeaveRoom = () => {
     window.history.back();
@@ -317,7 +320,7 @@ export default function WaitingRoom() {
                     </button>
                     <button
                       onClick={handleLeaveRoom}
-                      className={`sm:flex-none ${styles.button.secondary}`}>
+                      className={`sm:flex-none ${styles.button.secondary} flex items-center justify-center gap-2 mt-6`}>
                       Cancel
                     </button>
                   </div>

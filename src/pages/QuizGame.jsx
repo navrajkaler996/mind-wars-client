@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import { useLocation, useParams } from "react-router-dom";
 import { quizGameStyles as styles } from "../styles";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
+const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
 export default function QuizGame() {
   const { code } = useParams();
@@ -452,32 +452,6 @@ export default function QuizGame() {
                   </button>
                 ))}
               </div>
-
-              {showCorrectAnswer && (
-                <div
-                  className={`mt-6 p-4 rounded-xl ${
-                    selectedAnswer === currentQuestion?.answer
-                      ? "bg-green-500/10 border border-green-500/30"
-                      : selectedAnswer === null
-                      ? "bg-yellow-500/10 border border-yellow-500/30"
-                      : "bg-red-500/10 border border-red-500/30"
-                  }`}>
-                  <div className="font-semibold mb-1">
-                    {selectedAnswer === currentQuestion?.answer
-                      ? "🎉 Correct!"
-                      : selectedAnswer === null
-                      ? "⏰ Time's up!"
-                      : "❌ Incorrect"}
-                  </div>
-                  <div className="text-sm text-slate-300">
-                    {selectedAnswer === currentQuestion?.answer
-                      ? `+${Math.round(
-                          100 + timeLeft * 3
-                        )} points! Moving to next question...`
-                      : `The correct answer was: ${currentQuestion?.answer}`}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className={`${styles.card.base} p-4`}>
@@ -508,6 +482,31 @@ export default function QuizGame() {
           </div>
         </main>
       </div>
+      {showCorrectAnswer && (
+        <div
+          className={`fixed bottom-4 right-4 w-80 p-4 rounded-xl z-50 shadow-lg ${
+            selectedAnswer === currentQuestion?.answer
+              ? "bg-green-500/10 border border-green-500/30"
+              : selectedAnswer === null
+              ? "bg-yellow-500/10 border border-yellow-500/30"
+              : "bg-red-500/10 border border-red-500/30"
+          }`}>
+          <div className="font-semibold mb-1">
+            {selectedAnswer === currentQuestion?.answer
+              ? "🎉 Correct!"
+              : selectedAnswer === null
+              ? "⏰ Time's up!"
+              : "❌ Incorrect"}
+          </div>
+          <div className="text-sm text-slate-300">
+            {selectedAnswer === currentQuestion?.answer
+              ? `+${Math.round(
+                  100 + timeLeft * 3
+                )} points! Moving to next question...`
+              : `The correct answer was: ${currentQuestion?.answer}`}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
