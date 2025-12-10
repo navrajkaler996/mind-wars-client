@@ -22,6 +22,8 @@ export default function WaitingRoom() {
 
   const [showMessage, setShowMessage] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     if (!justJoinedPlayer) return;
 
@@ -90,6 +92,8 @@ export default function WaitingRoom() {
   };
 
   const handleStartQuiz = () => {
+    setLoading(true);
+
     const roomId = id;
 
     socket.emit("startQuiz", {
@@ -98,6 +102,7 @@ export default function WaitingRoom() {
       topic,
       numQuestions,
     });
+    setLoading(false);
   };
 
   const handleLeaveRoom = () => {
@@ -288,9 +293,18 @@ export default function WaitingRoom() {
                     <button
                       onClick={handleStartQuiz}
                       disabled={players.length < 2}
-                      className={`flex-1 ${styles.button.primary} flex items-center justify-center gap-2`}>
-                      <Play className="w-5 h-5" />
-                      Start Quiz
+                      className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
+                      {loading ? (
+                        <>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          Starting quiz...
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="w-5 h-5" />
+                          Start Quiz
+                        </>
+                      )}
                     </button>
                     <button
                       onClick={handleLeaveRoom}
