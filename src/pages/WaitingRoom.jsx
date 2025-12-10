@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Zap, Copy, Check, Users, Crown, UserPlus, Play } from "lucide-react";
+import {
+  Zap,
+  Copy,
+  Check,
+  Users,
+  Crown,
+  UserPlus,
+  Play,
+  LogIn,
+} from "lucide-react";
 import { styles } from "../styles";
 
 import { io } from "socket.io-client";
