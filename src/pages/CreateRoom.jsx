@@ -50,9 +50,16 @@ export default function CreateRoom() {
       const response = await createRoom(room);
       const createdRoom = response?.roomWithPlayers;
 
-      localStorage.setItem(`room:${createdRoom.code}`, JSON.stringify(room));
+      // localStorage.setItem(`room:${createdRoom.code}`, JSON.stringify(room));
+      // navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`);
 
-      navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`);
+      navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`, {
+        state: {
+          roomData: { ...response, room, playerName },
+
+          roomCode: createdRoom?.code,
+        },
+      });
       setLoading(false);
     } catch (error) {
       console.error("Failed to create room:", error);

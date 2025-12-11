@@ -9,7 +9,7 @@ const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 export default function QuizGame() {
   const { code } = useParams();
   const location = useLocation();
-  const { id } = location?.state || {};
+  const { id, roomData } = location?.state || {};
 
   const [roomCode, setRoomCode] = useState("");
   const [topic, setTopic] = useState("");
@@ -29,15 +29,16 @@ export default function QuizGame() {
   const [showCelebration, setShowCelebration] = useState(false);
   const [showWrongEffect, setShowWrongEffect] = useState(false);
   const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
+  //User and roomData is coming via navigate state
   useEffect(() => {
     if (code) {
-      const roomData = localStorage.getItem(`room:${code}`);
       if (roomData) {
         try {
-          const room = JSON.parse(roomData);
-          setPlayerName(room.playerName || "");
-          setPlayersList(room.players || []);
+          setPlayerName(roomData?.playerName || "");
+          setPlayersList(roomData.players || []);
         } catch (error) {
           console.error("Failed to parse room data:", error);
         }
@@ -73,8 +74,26 @@ export default function QuizGame() {
       setPlayersList(waitingRoomData?.playersInRoom || []);
     };
 
+    const handleLeaderboardUpdate = (leaderboardData) => {
+      setLeaderboard(leaderboardData || []);
+    };
+
     const handleCorrectAnswer = ({ playerName: correctPlayerName }) => {
-      console.log("✅ Correct answer from:", correctPlayerName);
+      // Add notification for all users
+      const notificationId = Date.now();
+      setNotifications((prev) => [
+        ...prev,
+        {
+          id: notificationId,
+          playerName: correctPlayerName,
+          isCurrentPlayer: correctPlayerName === playerName,
+        },
+      ]);
+
+      // Remove notification after 4 seconds
+      setTimeout(() => {
+        setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+      }, 4000);
 
       setAnswered(true);
       setShowCorrectAnswer(true);
@@ -103,31 +122,32 @@ export default function QuizGame() {
     socket.on("quizStarted", handleQuizStarted);
     socket.on("quizEnded", handleQuizEnded);
     socket.on("updatePlayers", handleUpdatePlayers);
+    socket.on("leaderboardUpdate", handleLeaderboardUpdate);
     socket.on("correctAnswer", handleCorrectAnswer);
     socket.on("wrongAnswer", handleWrongAnswer);
 
     return () => {
-      console.log("🧹 Cleaning up listeners");
       socket.off("newQuestion", handleNewQuestion);
       socket.off("quizStarted", handleQuizStarted);
       socket.off("quizEnded", handleQuizEnded);
       socket.off("updatePlayers", handleUpdatePlayers);
+      socket.off("leaderboardUpdate", handleLeaderboardUpdate);
       socket.off("correctAnswer", handleCorrectAnswer);
       socket.off("wrongAnswer", handleWrongAnswer);
     };
   }, []);
 
   useEffect(() => {
+    //Quiz will not start if either of the two is missing
     if (!id || !playerName) {
       console.log("⏳ Waiting for id and playerName...");
       return;
     }
 
-    console.log("🚪 Joining room:", id, "as", playerName);
     socket.emit("joinRoom", { id, playerName });
 
     const handleRoomJoined = ({ roomId }) => {
-      console.log("✅ Successfully joined room:", roomId);
+      console.log("Successfully joined room:", roomId);
     };
 
     socket.on("roomJoined", handleRoomJoined);
@@ -270,6 +290,74 @@ export default function QuizGame() {
                   <div className="text-xs text-slate-500">Accuracy</div>
                 </div>
               </div>
+              {/* Leaderboard for final results of all the players*/}
+              {leaderboard.length > 0 && (
+                <div className="container mx-auto px-6 pb-3">
+                  <div className={` p-3`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Trophy className="w-4 h-4 text-yellow-400" />
+                      <h3 className="text-md tracking-wide font-semibold">
+                        Leaderboard
+                      </h3>
+                    </div>
+                    <div className="space-y-1">
+                      {leaderboard.map((player, index) => {
+                        if (!player?.name) return;
+                        const isCurrentPlayer = player.name === playerName;
+                        const medalEmoji =
+                          index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
+
+                        return (
+                          <div
+                            key={player.id || index}
+                            className={`flex items-center justify-between p-2 rounded-lg transition-all mb-2 ${
+                              isCurrentPlayer
+                                ? "bg-purple-500/30 border border-purple-500/50"
+                                : "bg-white/5 hover:bg-white/10"
+                            }`}>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {medalEmoji}
+
+                              <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                <span
+                                  className={`text-sm font-medium truncate ${
+                                    isCurrentPlayer ? "text-purple-200" : ""
+                                  }`}>
+                                  {player.name}
+                                </span>
+                                {isCurrentPlayer && (
+                                  <span className="text-xs px-1.5 py-0.5 bg-purple-500/50 rounded-full flex-shrink-0">
+                                    You
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div
+                                className={`text-sm font-bold ${
+                                  index === 0
+                                    ? "text-yellow-400"
+                                    : index === 1
+                                    ? "text-gray-300"
+                                    : "text-orange-400"
+                                }`}>
+                                {player.score || 0}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* {leaderboard.length > 3 && (
+                        <div className="text-center text-xs text-slate-400 py-1">
+                          {leaderboard.length - 3} more player
+                          {leaderboard.length - 3 !== 1 ? "s" : ""}
+                        </div>
+                      )} */}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <button
                 onClick={() => (window.location.href = "/")}
@@ -375,16 +463,63 @@ export default function QuizGame() {
                 MindWars
               </span>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               <div className="text-right">
                 <div className="text-xs text-slate-400">Your Score</div>
                 <div className="text-2xl font-bold text-purple-400">
                   {score}
                 </div>
               </div>
+              <div className="h-10 w-px bg-white/20"></div>
             </div>
           </div>
         </header>
+
+        {/* Notification for the correct answer */}
+        <div className="fixed top-20 right-6 z-50 space-y-2">
+          {notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg backdrop-blur-sm ${
+                notification.isCurrentPlayer
+                  ? "bg-green-500/20 border border-green-500/50"
+                  : "bg-blue-500/20 border border-blue-500/50"
+              }`}
+              style={{
+                animation: "slideIn 0.3s ease-out",
+              }}>
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-white">
+                  {notification.isCurrentPlayer
+                    ? "You"
+                    : notification.playerName}{" "}
+                  answered correctly!
+                </div>
+                <div className="text-xs text-slate-300">
+                  {notification.isCurrentPlayer
+                    ? "Great job! 🎉"
+                    : "Moving to next question..."}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <style>{`
+          @keyframes slideIn {
+            from {
+              transform: translateX(400px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+        `}</style>
 
         <main className="container mx-auto px-6 py-8">
           <div className="max-w-4xl mx-auto">
@@ -411,7 +546,7 @@ export default function QuizGame() {
               </div>
             </div>
 
-            <div className={`${styles.card.base} mb-8`}>
+            <div className={`${styles.card.base} `}>
               <div className="mb-8">
                 <div className="inline-block px-4 py-2 bg-purple-500/20 backdrop-blur-sm rounded-full border border-purple-500/30 mb-4">
                   <span className="text-sm text-purple-200">{topic}</span>
@@ -420,6 +555,32 @@ export default function QuizGame() {
                   {currentQuestion?.question}
                 </h2>
               </div>
+
+              {showCorrectAnswer && (
+                <div
+                  className={`mt-6 mb-6 p-4 rounded-xl ${
+                    selectedAnswer === currentQuestion?.answer
+                      ? "bg-green-500/10 border border-green-500/30"
+                      : selectedAnswer === null
+                      ? "bg-yellow-500/10 border border-yellow-500/30"
+                      : "bg-red-500/10 border border-red-500/30"
+                  }`}>
+                  <div className="font-semibold mb-1">
+                    {selectedAnswer === currentQuestion?.answer
+                      ? "🎉 Correct!"
+                      : selectedAnswer === null
+                      ? "⏰ Time's up!"
+                      : "❌ Incorrect"}
+                  </div>
+                  <div className="text-sm text-slate-300">
+                    {selectedAnswer === currentQuestion?.answer
+                      ? `+${Math.round(
+                          100 + timeLeft * 3
+                        )} points! Moving to next question...`
+                      : `The correct answer was: ${currentQuestion?.answer}`}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4">
                 {currentQuestion?.options?.map((option, index) => (
@@ -482,31 +643,6 @@ export default function QuizGame() {
           </div>
         </main>
       </div>
-      {showCorrectAnswer && (
-        <div
-          className={`fixed bottom-4 right-4 w-80 p-4 rounded-xl z-50 shadow-lg ${
-            selectedAnswer === currentQuestion?.answer
-              ? "bg-green-500/10 border border-green-500/30"
-              : selectedAnswer === null
-              ? "bg-yellow-500/10 border border-yellow-500/30"
-              : "bg-red-500/10 border border-red-500/30"
-          }`}>
-          <div className="font-semibold mb-1">
-            {selectedAnswer === currentQuestion?.answer
-              ? "🎉 Correct!"
-              : selectedAnswer === null
-              ? "⏰ Time's up!"
-              : "❌ Incorrect"}
-          </div>
-          <div className="text-sm text-slate-300">
-            {selectedAnswer === currentQuestion?.answer
-              ? `+${Math.round(
-                  100 + timeLeft * 3
-                )} points! Moving to next question...`
-              : `The correct answer was: ${currentQuestion?.answer}`}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

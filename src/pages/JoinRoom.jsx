@@ -49,12 +49,19 @@ export default function JoinRoom() {
       const response = await joinRoom(playerData);
 
       //local storage is used in next page, i.e. CreateRoom to display data
-      localStorage.setItem(
-        `room:${roomCode}`,
-        JSON.stringify({ ...response, ...response?.room })
-      );
+      // localStorage.setItem(
+      //   `room:${roomCode}`,
+      //   JSON.stringify({ ...response, ...response?.room })
+      // );
 
-      navigate(`/waiting-room/${roomCode}/${response?.room?.id}`);
+      // navigate(`/waiting-room/${roomCode}/${response?.room?.id}`);
+
+      navigate(`/waiting-room/${roomCode}/${response?.room?.id}`, {
+        state: {
+          roomData: { ...response, ...response?.room },
+          roomCode,
+        },
+      });
     } catch (error) {
       console.error("Failed to join room:", error);
       setError("Failed to join room. Please try again.");

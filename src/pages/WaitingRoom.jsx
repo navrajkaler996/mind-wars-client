@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Zap,
   Copy,
@@ -18,6 +18,8 @@ const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
 export default function WaitingRoom() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { roomData } = location.state || {};
 
   const { code, id } = useParams();
   const [roomCode, setRoomCode] = useState("");
@@ -62,12 +64,12 @@ export default function WaitingRoom() {
   useEffect(() => {
     if (code) {
       setRoomCode(code);
-      const roomData = localStorage.getItem(`room:${code}`);
+
       if (roomData) {
         try {
-          const room = JSON.parse(roomData);
+          const room = roomData?.room;
 
-          setPlayername(room.playerName || "");
+          setPlayername(roomData.playerName || "");
           setRoomName(room.roomName || "");
           setTopic(room.topic || "");
           setNumQuestions(room.numQuestions || 10);
@@ -85,7 +87,15 @@ export default function WaitingRoom() {
       console.log(roomCode, id);
       //Navigate to quiz page for all players
       navigate(`/quiz-game/${roomCode}`, {
-        state: { questions, topic, roomName, numQuestions, id },
+        state: {
+          questions,
+          topic,
+          roomName,
+          numQuestions,
+          id,
+          roomData,
+          players,
+        },
       });
       setLoading(false);
     });
