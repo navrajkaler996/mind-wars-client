@@ -158,7 +158,7 @@ export default function QuizGame() {
   }, [id, playerName]);
 
   useEffect(() => {
-    if (quizEnded || answered || !currentQuestion) return;
+    if (quizEnded || !currentQuestion) return;
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -556,31 +556,15 @@ export default function QuizGame() {
                 </h2>
               </div>
 
-              {showCorrectAnswer && (
+              {/* {showCorrectAnswer && selectedAnswer === null && (
                 <div
-                  className={`mt-6 mb-6 p-4 rounded-xl ${
-                    selectedAnswer === currentQuestion?.answer
-                      ? "bg-green-500/10 border border-green-500/30"
-                      : selectedAnswer === null
-                      ? "bg-yellow-500/10 border border-yellow-500/30"
-                      : "bg-red-500/10 border border-red-500/30"
-                  }`}>
-                  <div className="font-semibold mb-1">
-                    {selectedAnswer === currentQuestion?.answer
-                      ? "🎉 Correct!"
-                      : selectedAnswer === null
-                      ? "⏰ Time's up!"
-                      : "❌ Incorrect"}
-                  </div>
+                  className={`mt-6 mb-6 p-4 rounded-xl ${"bg-yellow-500/10 border border-yellow-500/30"}`}>
+                  <div className="font-semibold mb-1">{"⏰ Time's up!"}</div>
                   <div className="text-sm text-slate-300">
-                    {selectedAnswer === currentQuestion?.answer
-                      ? `+${Math.round(
-                          100 + timeLeft * 3
-                        )} points! Moving to next question...`
-                      : `The correct answer was: ${currentQuestion?.answer}`}
+                    {`The correct answer was: ${currentQuestion?.answer}`}
                   </div>
                 </div>
-              )}
+              )} */}
 
               <div className="space-y-4">
                 {currentQuestion?.options?.map((option, index) => (
