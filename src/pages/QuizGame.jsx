@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import { useLocation, useParams } from "react-router-dom";
 import { quizGameStyles as styles } from "../styles";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
+const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
 
 export default function QuizGame() {
   const { code } = useParams();
