@@ -7,6 +7,7 @@ import {
   BookOpen,
   Users,
   LogIn,
+  User,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { styles } from "../styles";
@@ -20,6 +21,7 @@ export default function CreateRoom() {
   const [topic, setTopic] = useState("");
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [playAsGuest, setPlayeAsGuest] = useState(false);
 
   const questionOptions = [5, 10, 15, 20];
 
@@ -118,90 +120,130 @@ export default function CreateRoom() {
             </div>
 
             <div className={`${styles.card.base} space-y-6`}>
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-                  <Users className="w-4 h-4 text-purple-400" />
-                  Player Name
-                </label>
-                <input
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="e.g., War lord"
-                  className={styles.input.base}
-                  maxLength={30}
-                />
-              </div>
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-                  <Users className="w-4 h-4 text-purple-400" />
-                  Room Name
-                </label>
-                <input
-                  type="text"
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  placeholder="e.g., Epic Friday Quiz"
-                  className={styles.input.base}
-                  maxLength={30}
-                />
-              </div>
+              {playAsGuest ? (
+                <>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold mb-3">
+                      <Users className="w-4 h-4 text-purple-400" />
+                      Player Name
+                    </label>
+                    <input
+                      type="text"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                      placeholder="e.g., War lord"
+                      className={styles.input.base}
+                      maxLength={30}
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold mb-3">
+                      <Users className="w-4 h-4 text-purple-400" />
+                      Room Name
+                    </label>
+                    <input
+                      type="text"
+                      value={roomName}
+                      onChange={(e) => setRoomName(e.target.value)}
+                      placeholder="e.g., Epic Friday Quiz"
+                      className={styles.input.base}
+                      maxLength={30}
+                    />
+                  </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-                  <BookOpen className="w-4 h-4 text-cyan-400" />
-                  Quiz Topic
-                </label>
-                <input
-                  type="text"
-                  value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
-                  placeholder="e.g., World History, Science, Movies, Sports..."
-                  className={styles.input.base}
-                  maxLength={50}
-                />
-                <p className="text-xs text-slate-500 mt-2">
-                  AI will generate questions based on your topic
-                </p>
-              </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold mb-3">
+                      <BookOpen className="w-4 h-4 text-cyan-400" />
+                      Quiz Topic
+                    </label>
+                    <input
+                      type="text"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      placeholder="e.g., World History, Science, Movies, Sports..."
+                      className={styles.input.base}
+                      maxLength={50}
+                    />
+                    <p className="text-xs text-slate-500 mt-2">
+                      AI will generate questions based on your topic
+                    </p>
+                  </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-                  <Hash className="w-4 h-4 text-pink-400" />
-                  Number of Questions
-                </label>
-                <div className="grid grid-cols-4 gap-3">
-                  {questionOptions.map((num) => (
-                    <button
-                      key={num}
-                      onClick={() => setNumQuestions(num)}
-                      className={`py-3 rounded-lg font-semibold transition-all duration-300 ${
-                        numQuestions === num
-                          ? "bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50"
-                          : "bg-white/5 border border-white/20 hover:bg-white/10"
-                      }`}>
-                      {num}
-                    </button>
-                  ))}
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-semibold mb-3">
+                      <Hash className="w-4 h-4 text-pink-400" />
+                      Number of Questions
+                    </label>
+                    <div className="grid grid-cols-4 gap-3">
+                      {questionOptions.map((num) => (
+                        <button
+                          key={num}
+                          onClick={() => setNumQuestions(num)}
+                          className={`py-3 rounded-lg font-semibold transition-all duration-300 ${
+                            numQuestions === num
+                              ? "bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg shadow-purple-500/50"
+                              : "bg-white/5 border border-white/20 hover:bg-white/10"
+                          }`}>
+                          {num}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleCreateRoom}
+                    disabled={!roomName.trim() || !topic.trim()}
+                    className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-5 h-5" />
+                        Create Room
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-5">
+                  <button
+                    onClick={() => navigate("/login")}
+                    className={`w-1/2 ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
+                    {loading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <User className="w-5 h-5" />
+                        Sign in
+                      </>
+                    )}
+                  </button>
+                  <p>or</p>
+                  <button
+                    onClick={() => setPlayeAsGuest(true)}
+                    className={`w-1/2 ${styles.button.secondary} text-lg`}>
+                    Play as a guest
+                  </button>
+
+                  <div className="text-center pt-4 border-t border-white/10">
+                    <p className="text-sm text-slate-400">
+                      New to MindWars?{" "}
+                      <button
+                        type="button"
+                        onClick={() => navigate("/create-player")}
+                        className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">
+                        Create an account!
+                      </button>
+                    </p>
+                  </div>
                 </div>
-              </div>
-
-              <button
-                onClick={handleCreateRoom}
-                disabled={!roomName.trim() || !topic.trim()}
-                className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
-                {loading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="w-5 h-5" />
-                    Create Room
-                  </>
-                )}
-              </button>
+              )}
             </div>
           </div>
         </main>
