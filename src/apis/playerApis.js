@@ -1,25 +1,8 @@
 const API_URL = import.meta.env.VITE_API_URL_DEV;
 
-// Create a new room
-export async function createRoom(roomData) {
-  const res = await fetch(`${API_URL}/rooms/create`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(roomData),
-  });
-
-  if (!res.ok) {
-    const error = await res.text();
-    throw new Error(error || "Failed to create room");
-  }
-
-  return res.json();
-}
-
-export async function joinRoom(playerData) {
-  const res = await fetch(`${API_URL}/rooms/join`, {
+//Create a new player
+export async function createPlayer(playerData) {
+  const res = await fetch(`${API_URL}/players/create`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -29,7 +12,25 @@ export async function joinRoom(playerData) {
 
   if (!res.ok) {
     const error = await res.text();
-    throw new Error(error || "Failed to create room");
+    throw new Error(error || "Failed to create player");
+  }
+
+  res.json();
+}
+
+//Login a player
+export async function loginPlayer(playerData) {
+  const res = await fetch(`${API_URL}/players/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(playerData),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(error || "Failed to login");
   }
 
   return res.json();

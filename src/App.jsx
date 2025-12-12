@@ -6,6 +6,7 @@ import WaitingRoom from "./pages/WaitingRoom";
 import JoinRoom from "./pages/JoinRoom";
 import QuizGame from "./pages/QuizGame";
 import CreatePlayer from "./pages/CreatePlayer";
+import Login from "./pages/Login";
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/join-room" element={<JoinRoom />} />
         <Route path="/quiz-game/:code" element={<QuizGame />} />
         <Route path="/create-player" element={<CreatePlayer />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );

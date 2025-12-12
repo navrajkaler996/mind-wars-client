@@ -10,37 +10,25 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { styles } from "../styles";
-import { createPlayer } from "../apis/playerApis";
+import { loginPlayer } from "../apis/playerApis";
 
-export default function CreatePlayer() {
+export default function Login() {
   const navigate = useNavigate();
 
-  const [playerName, setPlayerName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
 
-  const handleCreatePlayer = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    if (!playerName.trim() || !email.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       alert("Please fill in all fields");
       return;
     }
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      alert("Password must be at least 6 characters long");
-      return;
-    }
-
     const player = {
-      name: playerName.trim(),
       email: email.trim(),
       password,
     };
@@ -48,16 +36,17 @@ export default function CreatePlayer() {
     try {
       setLoading(true);
 
-      const createdPlayer = await createPlayer(player);
+      const loggedInPlayer = await loginPlayer(player);
 
-      if (createdPlayer?.player) {
-        navigate("/login");
+      if (loggedInPlayer?.player) {
+        localStorage.setItem("token", loggedInPlayer?.token);
+        navigate("/create-room");
       }
 
       setLoading(false);
     } catch (error) {
-      console.error("Failed to create a player:", error);
-      alert("Failed to create account. Please try again.");
+      console.error("Failed to login:", error);
+      alert("Failed to login. Please try again.");
       setLoading(false);
     }
   };
@@ -100,32 +89,13 @@ export default function CreatePlayer() {
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 backdrop-blur-sm rounded-full border border-purple-500/30 mb-6">
                 <Sparkles className="w-4 h-4 text-purple-300" />
-                <span className="text-sm text-purple-200">Join MindWars</span>
+                <span className="text-sm text-purple-200">Login to battle</span>
               </div>
             </div>
 
             <form
-              onSubmit={handleCreatePlayer}
+              onSubmit={handleLogin}
               className={`${styles.card.base} space-y-6`}>
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-                  <User className="w-4 h-4 text-purple-400" />
-                  Player Name
-                </label>
-                <input
-                  type="text"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                  placeholder="Choose your warrior name"
-                  className={styles.input.base}
-                  maxLength={30}
-                  required
-                />
-                <p className="text-xs text-slate-500 mt-2">
-                  This is how other players will see you
-                </p>
-              </div>
-
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold mb-3">
                   <Mail className="w-4 h-4 text-cyan-400" />
@@ -157,53 +127,31 @@ export default function CreatePlayer() {
                 />
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-                  <Lock className="w-4 h-4 text-pink-400" />
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter your password"
-                  className={styles.input.base}
-                  minLength={6}
-                  required
-                />
-              </div>
-
               <button
                 type="submit"
-                disabled={
-                  loading ||
-                  !playerName.trim() ||
-                  !email.trim() ||
-                  !password.trim() ||
-                  !confirmPassword.trim()
-                }
+                disabled={loading || !email.trim() || !password.trim()}
                 className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Creating Account...
+                    Logging you in
                   </>
                 ) : (
                   <>
                     <UserPlus className="w-5 h-5" />
-                    Create Account
+                    Login
                   </>
                 )}
               </button>
 
               <div className="text-center pt-4 border-t border-white/10">
                 <p className="text-sm text-slate-400">
-                  Already have an account?{" "}
+                  Do not have an account?{" "}
                   <button
                     type="button"
-                    onClick={() => navigate("/login")}
+                    onClick={() => navigate("/create-player")}
                     className="text-purple-400 hover:text-purple-300 font-semibold transition-colors">
-                    Sign In
+                    Create an account
                   </button>
                 </p>
               </div>
