@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import { useLocation, useParams } from "react-router-dom";
 import { quizGameStyles as styles } from "../styles";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
+const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
 export default function QuizGame() {
   const { code } = useParams();
@@ -31,6 +31,8 @@ export default function QuizGame() {
   const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
   const [leaderboard, setLeaderboard] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [finalScore, setFinalScore] = useState([]);
+  const [finalScoreloader, setFinalScoreLoader] = useState(false);
 
   //User and roomData is coming via navigate state
   useEffect(() => {
@@ -118,6 +120,17 @@ export default function QuizGame() {
       }
     };
 
+    const handleFinalScores = (scores) => {
+      if (scores) {
+        const sortedScores = Object.entries(scores)
+          .map(([player, score]) => ({ player, score }))
+          .sort((a, b) => b.score - a.score);
+
+        setFinalScore(sortedScores);
+      }
+      setFinalScoreLoader(false);
+    };
+
     socket.on("newQuestion", handleNewQuestion);
     socket.on("quizStarted", handleQuizStarted);
     socket.on("quizEnded", handleQuizEnded);
@@ -125,6 +138,7 @@ export default function QuizGame() {
     socket.on("leaderboardUpdate", handleLeaderboardUpdate);
     socket.on("correctAnswer", handleCorrectAnswer);
     socket.on("wrongAnswer", handleWrongAnswer);
+    socket.on("finalScores", handleFinalScores);
 
     return () => {
       socket.off("newQuestion", handleNewQuestion);
@@ -140,7 +154,7 @@ export default function QuizGame() {
   useEffect(() => {
     //Quiz will not start if either of the two is missing
     if (!id || !playerName) {
-      console.log("⏳ Waiting for id and playerName...");
+      console.log("Waiting for id and playerName...");
       return;
     }
 
@@ -172,6 +186,17 @@ export default function QuizGame() {
 
     return () => clearInterval(timer);
   }, [currentQuestionIndex, quizEnded, answered, currentQuestion]);
+
+  useEffect(() => {
+    if (quizEnded) {
+      setFinalScoreLoader(true);
+      socket.emit("submitPlayerScore", {
+        roomId: id,
+        playerName,
+        score,
+      });
+    }
+  }, [quizEnded]);
 
   const handleTimeout = () => {
     setAnswered(true);
@@ -301,52 +326,59 @@ export default function QuizGame() {
                       </h3>
                     </div>
                     <div className="space-y-1">
-                      {leaderboard.map((player, index) => {
-                        if (!player?.name) return;
-                        const isCurrentPlayer = player.name === playerName;
-                        const medalEmoji =
-                          index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
+                      {finalScoreloader ? (
+                        <div
+                          className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        </div>
+                      ) : (
+                        finalScore?.map((player, index) => {
+                          if (!player.player) return;
+                          const isCurrentPlayer = player.player === playerName;
+                          const medalEmoji =
+                            index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉";
 
-                        return (
-                          <div
-                            key={player.id || index}
-                            className={`flex items-center justify-between p-2 rounded-lg transition-all mb-2 ${
-                              isCurrentPlayer
-                                ? "bg-purple-500/30 border border-purple-500/50"
-                                : "bg-white/5 hover:bg-white/10"
-                            }`}>
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {medalEmoji}
+                          return (
+                            <div
+                              key={player.id || index}
+                              className={`flex items-center justify-between p-2 rounded-lg transition-all mb-2 ${
+                                isCurrentPlayer
+                                  ? "bg-purple-500/30 border border-purple-500/50"
+                                  : "bg-white/5 hover:bg-white/10"
+                              }`}>
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                {medalEmoji}
 
-                              <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                <span
-                                  className={`text-sm font-medium truncate ${
-                                    isCurrentPlayer ? "text-purple-200" : ""
-                                  }`}>
-                                  {player.name}
-                                </span>
-                                {isCurrentPlayer && (
-                                  <span className="text-xs px-1.5 py-0.5 bg-purple-500/50 rounded-full flex-shrink-0">
-                                    You
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                  <span
+                                    className={`text-sm font-medium truncate ${
+                                      isCurrentPlayer ? "text-purple-200" : ""
+                                    }`}>
+                                    {player?.player}
                                   </span>
-                                )}
+                                  {isCurrentPlayer && (
+                                    <span className="text-xs px-1.5 py-0.5 bg-purple-500/50 rounded-full flex-shrink-0">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <div
+                                  className={`text-sm font-bold ${
+                                    index === 0
+                                      ? "text-yellow-400"
+                                      : index === 1
+                                      ? "text-gray-300"
+                                      : "text-orange-400"
+                                  }`}>
+                                  {player?.score || 0}
+                                </div>
                               </div>
                             </div>
-                            <div className="text-right flex-shrink-0">
-                              <div
-                                className={`text-sm font-bold ${
-                                  index === 0
-                                    ? "text-yellow-400"
-                                    : index === 1
-                                    ? "text-gray-300"
-                                    : "text-orange-400"
-                                }`}>
-                                {player.score || 0}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      )}
 
                       {/* {leaderboard.length > 3 && (
                         <div className="text-center text-xs text-slate-400 py-1">

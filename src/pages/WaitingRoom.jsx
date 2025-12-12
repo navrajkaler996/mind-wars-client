@@ -14,7 +14,7 @@ import { styles } from "../styles";
 
 import { io } from "socket.io-client";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
+const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
 export default function WaitingRoom() {
   const navigate = useNavigate();
