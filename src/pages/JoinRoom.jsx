@@ -12,6 +12,8 @@ import { useNavigate } from "react-router-dom";
 import { styles } from "../styles";
 import { joinRoom } from "../apis/roomApis";
 
+import Header from "../others/Header";
+
 export default function JoinRoom() {
   const navigate = useNavigate();
 
@@ -101,24 +103,7 @@ export default function JoinRoom() {
       </div>
 
       <div className="relative z-10">
-        <header className="container mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Zap className="w-6 h-6" />
-              </div>
-              <span className={`text-2xl font-bold ${styles.text.gradient}`}>
-                MindWars
-              </span>
-            </div>
-            <button
-              onClick={handleBack}
-              className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg hover:bg-white/20 transition-all duration-300 border border-white/20">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </div>
-        </header>
+        <Header />
 
         <main className="container mx-auto px-6 py-12">
           <div className="max-w-xl mx-auto">

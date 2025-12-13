@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "./pages/Landing";
 import CreateRoom from "./pages/CreateRoom";
@@ -7,19 +7,38 @@ import JoinRoom from "./pages/JoinRoom";
 import QuizGame from "./pages/QuizGame";
 import CreatePlayer from "./pages/CreatePlayer";
 import Login from "./pages/Login";
+import { AuthProvider } from "./AuthContext";
+import PublicRoute from "./others/PublicRoute";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/create-room" element={<CreateRoom />} />
-        <Route path="/waiting-room/:code/:id" element={<WaitingRoom />} />
-        <Route path="/join-room" element={<JoinRoom />} />
-        <Route path="/quiz-game/:code" element={<QuizGame />} />
-        <Route path="/create-player" element={<CreatePlayer />} />
-        <Route path="/login" element={<Login />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/create-room" element={<CreateRoom />} />
+          <Route path="/waiting-room/:code/:id" element={<WaitingRoom />} />
+          <Route path="/join-room" element={<JoinRoom />} />
+          <Route path="/quiz-game/:code" element={<QuizGame />} />
+
+          <Route
+            path="/create-player"
+            element={
+              <PublicRoute>
+                <CreatePlayer />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

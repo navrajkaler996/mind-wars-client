@@ -13,6 +13,7 @@ import {
 import { styles } from "../styles";
 
 import { io } from "socket.io-client";
+import Header from "../others/Header";
 
 const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
@@ -141,26 +142,7 @@ export default function WaitingRoom() {
       </div>
 
       <div className="relative z-10">
-        <header className="container mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                <Zap className="w-6 h-6" />
-              </div>
-              <span className={`text-2xl font-bold ${styles.text.gradient}`}>
-                MindWars
-              </span>
-            </div>
-            <button
-              onClick={handleLeaveRoom}
-              className={styles.button.secondary.replace(
-                "px-6 py-3",
-                "px-4 py-2"
-              )}>
-              Leave Room
-            </button>
-          </div>
-        </header>
+        <Header />
 
         <main className="container mx-auto px-6 py-12">
           <div className="max-w-5xl mx-auto">

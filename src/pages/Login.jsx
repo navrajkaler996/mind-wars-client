@@ -40,7 +40,8 @@ export default function Login() {
 
       if (loggedInPlayer?.player) {
         localStorage.setItem("token", loggedInPlayer?.token);
-        navigate("/create-room");
+        localStorage.setItem("player", JSON.stringify(loggedInPlayer?.player));
+        navigate("/");
       }
 
       setLoading(false);
