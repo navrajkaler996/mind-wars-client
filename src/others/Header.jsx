@@ -2,8 +2,11 @@ import { Zap } from "lucide-react/dist/cjs/lucide-react";
 import { styles } from "../styles";
 import { useEffect } from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Header() {
+  const navigate = useNavigate();
+
   const [loggedInPlayer, setLoggedInPlayer] = useState();
 
   useEffect(() => {
@@ -26,6 +29,7 @@ export default function Header() {
         </div>
 
         <button
+          onClick={() => navigate("/profile")}
           className={`px-6 py-2 ${styles.bg.glass} rounded-lg hover:bg-white/20 transition-all duration-300 border border-white/20`}>
           {loggedInPlayer?.name}
         </button>

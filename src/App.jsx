@@ -9,6 +9,7 @@ import CreatePlayer from "./pages/CreatePlayer";
 import Login from "./pages/Login";
 import { AuthProvider } from "./AuthContext";
 import PublicRoute from "./others/PublicRoute";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/waiting-room/:code/:id" element={<WaitingRoom />} />
           <Route path="/join-room" element={<JoinRoom />} />
           <Route path="/quiz-game/:code" element={<QuizGame />} />
+          <Route path="/profile" element={<Profile />} />
 
           <Route
             path="/create-player"
