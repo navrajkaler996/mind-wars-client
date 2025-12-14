@@ -3,6 +3,7 @@ import { Zap, Clock, Users, Trophy, CheckCircle, XCircle } from "lucide-react";
 import { io } from "socket.io-client";
 import { useLocation, useParams } from "react-router-dom";
 import { quizGameStyles as styles } from "../styles";
+import { updatePlayerBattlesWon, updateTotalScore } from "../apis/playerApis";
 
 const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
@@ -195,6 +196,22 @@ export default function QuizGame() {
         playerName,
         score,
       });
+
+      try {
+        const storedPlayer = localStorage.getItem("player");
+        const parsedStoredPlayer = JSON.parse(storedPlayer);
+
+        const playerData = {
+          newScore: score,
+          email: parsedStoredPlayer.email,
+        };
+
+        const updatedTotalScore = updateTotalScore(playerData);
+        const updatedTotalBattlesWon = updatePlayerBattlesWon(playerData);
+
+        console.log(updatedTotalScore);
+        console.log(updatedTotalBattlesWon);
+      } catch (error) {}
     }
   }, [quizEnded]);
 

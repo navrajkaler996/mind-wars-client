@@ -24,13 +24,19 @@ export default function CreateRoom() {
   const [loading, setLoading] = useState(false);
   const [playAsGuest, setPlayeAsGuest] = useState(false);
   const [user, setUser] = useState();
+  const [email, setEmail] = useState();
 
   const questionOptions = [5, 10, 15, 20];
 
   useEffect(() => {
     const storedPlayer = localStorage.getItem("player");
 
-    if (storedPlayer) setUser(JSON.parse(storedPlayer));
+    if (storedPlayer) {
+      const parsedStoredPlayer = JSON.parse(storedPlayer);
+      setUser(JSON.parse(storedPlayer));
+      setPlayerName(parsedStoredPlayer?.name);
+      setEmail(parsedStoredPlayer?.email);
+    }
   }, []);
 
   //Generating room code
@@ -65,7 +71,7 @@ export default function CreateRoom() {
 
       navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`, {
         state: {
-          roomData: { ...response, room, playerName },
+          roomData: { ...response, room, playerName, email },
 
           roomCode: createdRoom?.code,
         },

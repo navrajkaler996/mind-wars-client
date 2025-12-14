@@ -30,6 +30,7 @@ export default function WaitingRoom() {
   const [numQuestions, setNumQuestions] = useState(10);
   const [copied, setCopied] = useState(false);
   const [players, setPlayers] = useState([]);
+  const [email, setEmail] = useState();
   const [justJoinedPlayer, setJustJoinedPlayer] = useState();
 
   const [showMessage, setShowMessage] = useState(false);
@@ -49,9 +50,10 @@ export default function WaitingRoom() {
   }, [justJoinedPlayer]);
 
   useEffect(() => {
-    socket.emit("joinRoom", { id, playerName });
+    socket.emit("joinRoom", { id, playerName, email });
 
     socket.on("updatePlayers", (waitingRoomData) => {
+      console.log("---aa", waitingRoomData);
       setPlayers(waitingRoomData?.playersInRoom);
       setJustJoinedPlayer(waitingRoomData?.latestPlayer);
     });
@@ -75,6 +77,7 @@ export default function WaitingRoom() {
           setTopic(room.topic || "");
           setNumQuestions(room.numQuestions || 10);
           setPlayers(room.players || []);
+          setEmail(roomData.email || "");
         } catch (error) {
           console.error("Failed to parse room data:", error);
         }

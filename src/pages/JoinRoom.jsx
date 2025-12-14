@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Zap,
   ArrowLeft,
@@ -21,6 +21,19 @@ export default function JoinRoom() {
   const [playerName, setPlayerName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [user, setUser] = useState();
+  const [email, setEmail] = useState();
+
+  useEffect(() => {
+    const storedPlayer = localStorage.getItem("player");
+
+    if (storedPlayer) {
+      const parsedStoredPlayer = JSON.parse(storedPlayer);
+      setUser(JSON.parse(storedPlayer));
+      setPlayerName(parsedStoredPlayer?.name);
+      setEmail(parsedStoredPlayer?.email);
+    }
+  }, []);
 
   const handleRoomCodeChange = (e) => {
     const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -46,6 +59,7 @@ export default function JoinRoom() {
       const playerData = {
         code: roomCode,
         playerName,
+        email: email,
       };
 
       const response = await joinRoom(playerData);
@@ -57,10 +71,10 @@ export default function JoinRoom() {
       // );
 
       // navigate(`/waiting-room/${roomCode}/${response?.room?.id}`);
-
+      console.log("room", response);
       navigate(`/waiting-room/${roomCode}/${response?.room?.id}`, {
         state: {
-          roomData: { ...response, ...response?.room },
+          roomData: { ...response, ...response?.room, email },
           roomCode,
         },
       });
