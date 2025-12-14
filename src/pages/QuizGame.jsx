@@ -53,7 +53,8 @@ export default function QuizGame() {
       }
     }
   }, [code]);
-  console.log("playerlist", playersList);
+
+  //If all other players leave, end the quiz
   useEffect(() => {
     if (playersList?.length === 1 && !quizEnded) {
       const confirmEnd = window.confirm(
@@ -139,7 +140,6 @@ export default function QuizGame() {
     };
 
     const handleFinalScores = (scores) => {
-      console.log("aaaa", scores);
       if (scores) {
         const sortedScores = Object.entries(scores)
           .map(([player, score]) => ({ player, score }))
@@ -173,7 +173,6 @@ export default function QuizGame() {
   useEffect(() => {
     //Quiz will not start if either of the two is missing
     if (!id || !playerName) {
-      console.log("Waiting for id and playerName...");
       return;
     }
 
@@ -225,13 +224,48 @@ export default function QuizGame() {
         };
 
         const updatedTotalScore = updateTotalScore(playerData);
-        const updatedTotalBattlesWon = updatePlayerBattlesWon(playerData);
 
         console.log(updatedTotalScore);
-        console.log(updatedTotalBattlesWon);
       } catch (error) {}
     }
   }, [quizEnded]);
+
+  useEffect(() => {
+    const checkTopPlayer = async () => {
+      try {
+        if (finalScore?.length > 0) {
+          console.log(finalScore, "sasassasa");
+
+          const topPlayer = finalScore.reduce(
+            (max, current) => (current.score > max.score ? current : max),
+            finalScore[0]
+          );
+
+          const storedPlayer = localStorage.getItem("player");
+          const parsedStoredPlayer = JSON.parse(storedPlayer);
+
+          const playerData = {
+            newScore: score,
+            email: parsedStoredPlayer.email,
+          };
+
+          if (topPlayer.player === playerName) {
+            const updatedTotalBattlesWon = await updatePlayerBattlesWon({
+              email: playerData?.email,
+            });
+            console.log("Battles won updated:", updatedTotalBattlesWon);
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Error in determining top player or updating battles won:",
+          error
+        );
+      }
+    };
+
+    checkTopPlayer();
+  }, [finalScore]);
 
   useEffect(() => {
     socket.on("playerLeft", ({ roomId, email, playerName }) => {
@@ -342,8 +376,6 @@ export default function QuizGame() {
     if (timeLeft > 3) return "text-yellow-400";
     return "text-red-400";
   };
-
-  console.log("----aaaa", justLeftPlayer, showMessageForPlayerLeft);
 
   if (!currentQuestion && !quizEnded) {
     return (

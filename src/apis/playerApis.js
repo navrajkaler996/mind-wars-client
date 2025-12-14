@@ -69,3 +69,20 @@ export async function updatePlayerBattlesWon(playerData) {
 
   return res.json();
 }
+
+// Get a player by email
+export async function getPlayer(email) {
+  const res = await fetch(`${API_URL}/players/${email}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(error || "Failed to fetch player");
+  }
+
+  return res.json();
+}
