@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Zap,
   ArrowLeft,
@@ -8,11 +8,13 @@ import {
   Users,
   LogIn,
   User,
+  ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { styles } from "../styles";
 import { createRoom } from "../apis/roomApis";
 import Header from "../others/Header";
+import { searchEquivalentTopics } from "../apis/topicApis";
 
 export default function CreateRoom() {
   const navigate = useNavigate();
@@ -20,11 +22,17 @@ export default function CreateRoom() {
   const [playerName, setPlayerName] = useState("");
   const [roomName, setRoomName] = useState("");
   const [topic, setTopic] = useState("");
+  const [masterTopic, setMasterTopic] = useState(false);
   const [numQuestions, setNumQuestions] = useState(10);
   const [loading, setLoading] = useState(false);
   const [playAsGuest, setPlayeAsGuest] = useState(false);
   const [user, setUser] = useState();
   const [email, setEmail] = useState();
+
+  const [topicSuggestions, setTopicSuggestions] = useState([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchingTopics, setSearchingTopics] = useState(false);
+  const dropdownRef = useRef(null);
 
   const questionOptions = [5, 10, 15, 20];
 
@@ -39,14 +47,64 @@ export default function CreateRoom() {
     }
   }, []);
 
-  //Generating room code
-  const generateRoomCode = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let code = "";
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
+  //Search for equivalent topics
+  useEffect(() => {
+    const searchTopics = async () => {
+      if (masterTopic) return;
+      if (topic.trim().length < 3) {
+        setTopicSuggestions([]);
+        setShowDropdown(false);
+        return;
+      }
+
+      try {
+        setSearchingTopics(true);
+        const response = await searchEquivalentTopics(topic.trim());
+
+        if (
+          response.success &&
+          response.matches &&
+          response.matches.length > 0
+        ) {
+          setTopicSuggestions(response.matches);
+          setShowDropdown(true);
+        } else {
+          setTopicSuggestions([]);
+          setShowDropdown(false);
+        }
+        setSearchingTopics(false);
+      } catch (error) {
+        console.error("Error searching topics:", error);
+        setSearchingTopics(false);
+        setTopicSuggestions([]);
+        setShowDropdown(false);
+      }
+    };
+
+    //Debouncing
+    const timeoutId = setTimeout(() => {
+      searchTopics();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [topic]);
+
+  //Closing dropdown when clicked anywhere on screen
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleTopicSelect = (selectedTopic) => {
+    setMasterTopic(true);
+    setTopic(selectedTopic);
+    setShowDropdown(false);
   };
 
   const handleCreateRoom = async (e) => {
@@ -58,21 +116,17 @@ export default function CreateRoom() {
       topic,
       numQuestions,
       playerName,
+      masterTopic,
     };
 
     try {
       setLoading(true);
-      // Create room on backend
       const response = await createRoom(room);
       const createdRoom = response?.roomWithPlayers;
-
-      // localStorage.setItem(`room:${createdRoom.code}`, JSON.stringify(room));
-      // navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`);
 
       navigate(`/waiting-room/${createdRoom?.code}/${createdRoom?.id}`, {
         state: {
           roomData: { ...response, room, playerName, email },
-
           roomCode: createdRoom?.code,
         },
       });
@@ -80,6 +134,7 @@ export default function CreateRoom() {
     } catch (error) {
       console.error("Failed to create room:", error);
       alert("Failed to create room. Please try again.");
+      setLoading(false);
     }
   };
 
@@ -156,19 +211,76 @@ export default function CreateRoom() {
                     />
                   </div>
 
-                  <div>
+                  <div className="relative" ref={dropdownRef}>
                     <label className="flex items-center gap-2 text-sm font-semibold mb-3">
                       <BookOpen className="w-4 h-4 text-cyan-400" />
                       Quiz Topic
                     </label>
-                    <input
-                      type="text"
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      placeholder="e.g., World History, Science, Movies, Sports..."
-                      className={styles.input.base}
-                      maxLength={50}
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={topic}
+                        onChange={(e) => {
+                          if (masterTopic) setMasterTopic(false);
+                          setTopicSuggestions([]);
+                          setTopic(e.target.value);
+                        }}
+                        onFocus={() =>
+                          topicSuggestions.length > 0 && setShowDropdown(true)
+                        }
+                        placeholder="e.g., World History, Science, Movies, Sports..."
+                        className={styles.input.base}
+                        maxLength={50}
+                      />
+                      {searchingTopics && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </div>
+
+                    {searchingTopics && (
+                      <div className="w-full mt-4 mb-4 mx-auto bg-indigo-900/80 backdrop-blur-md border border-indigo-400/20 rounded-2xl shadow-lg overflow-hidden">
+                        <div className="flex items-center p-2 space-x-3 border-b border-indigo-400/10">
+                          {/* Loading spinner */}
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+
+                          {/* Message */}
+                          <p className="text-sm text-indigo-100 ">
+                            Please wait while we match your topic...
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dropdown Suggestions */}
+                    {showDropdown && topicSuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-2 bg-slate-800/95 backdrop-blur-sm border border-white/20 rounded-xl shadow-2xl overflow-hidden">
+                        <div className="p-2 text-xs text-slate-400 border-b border-white/10">
+                          Related topics:
+                        </div>
+                        {topicSuggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleTopicSelect(suggestion.topic)}
+                            className="w-full px-4 py-3 text-left hover:bg-purple-500/20 transition-colors flex items-center justify-between group">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="w-4 h-4 text-cyan-400" />
+                              <span className="capitalize group-hover:text-purple-300 transition-colors">
+                                {suggestion.topic}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="text-xs text-slate-400">
+                                {Math.round(suggestion.confidence * 100)}% match
+                              </div>
+                              <ChevronDown className="w-4 h-4 text-slate-400 transform -rotate-90" />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     <p className="text-xs text-slate-500 mt-2">
                       AI will generate questions based on your topic
                     </p>
@@ -197,7 +309,7 @@ export default function CreateRoom() {
 
                   <button
                     onClick={handleCreateRoom}
-                    disabled={!roomName.trim() || !topic.trim()}
+                    disabled={!roomName.trim() || !topic.trim() || loading}
                     className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
                     {loading ? (
                       <>
@@ -217,17 +329,10 @@ export default function CreateRoom() {
                   <button
                     onClick={() => navigate("/login")}
                     className={`w-1/2 ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
-                    {loading ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <User className="w-5 h-5" />
-                        Sign in
-                      </>
-                    )}
+                    <>
+                      <User className="w-5 h-5" />
+                      Sign in
+                    </>
                   </button>
                   <p>or</p>
                   <button
