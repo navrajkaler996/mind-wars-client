@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Zap, Clock, Users, Trophy, CheckCircle, XCircle } from "lucide-react";
 import { io } from "socket.io-client";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { quizGameStyles as styles } from "../styles";
 import { updatePlayerBattlesWon, updateTotalScore } from "../apis/playerApis";
 
@@ -10,6 +10,7 @@ const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 export default function QuizGame() {
   const { code } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { id, roomData } = location?.state || {};
 
   const [roomCode, setRoomCode] = useState("");
@@ -35,6 +36,10 @@ export default function QuizGame() {
   const [finalScore, setFinalScore] = useState([]);
   const [finalScoreloader, setFinalScoreLoader] = useState(false);
 
+  const [justLeftPlayer, setJustLeftPlayer] = useState();
+  const [showMessageForPlayerLeft, setShowMessageForPlayerLeft] =
+    useState(false);
+
   //User and roomData is coming via navigate state
   useEffect(() => {
     if (code) {
@@ -48,6 +53,18 @@ export default function QuizGame() {
       }
     }
   }, [code]);
+  console.log("playerlist", playersList);
+  useEffect(() => {
+    if (playersList?.length === 1 && !quizEnded) {
+      const confirmEnd = window.confirm(
+        "You're the last player remaining. The quiz will end. Continue?"
+      );
+
+      if (confirmEnd) {
+        setQuizEnded(true);
+      }
+    }
+  }, [playersList, quizEnded]);
 
   useEffect(() => {
     const handleNewQuestion = ({ question, questionIndex, totalQuestions }) => {
@@ -216,6 +233,59 @@ export default function QuizGame() {
     }
   }, [quizEnded]);
 
+  useEffect(() => {
+    socket.on("playerLeft", ({ roomId, email, playerName }) => {
+      console.log("Player left:", email);
+      setJustLeftPlayer(playerName);
+    });
+
+    return () => {
+      socket.off("playerLeft");
+    };
+  }, []);
+
+  useEffect(() => {
+    // Handle browser back / forward navigation
+    const handlePopState = (e) => {
+      e.preventDefault();
+      const confirmLeave = window.confirm("You are about to leave the quiz!");
+      if (confirmLeave) {
+        navigate("/");
+      } else {
+        // Prevent going back by pushing state again
+        history.pushState(null, null, location.href);
+      }
+    };
+
+    // Handle tab close or reload
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "You are about to leave the quiz!";
+    };
+
+    history.pushState(null, null, location.href);
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!justLeftPlayer) return;
+
+    setShowMessageForPlayerLeft(true);
+
+    const timer = setTimeout(() => {
+      setShowMessageForPlayerLeft(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [justLeftPlayer]);
+
   const handleTimeout = () => {
     setAnswered(true);
     setShowCorrectAnswer(true);
@@ -272,6 +342,8 @@ export default function QuizGame() {
     if (timeLeft > 3) return "text-yellow-400";
     return "text-red-400";
   };
+
+  console.log("----aaaa", justLeftPlayer, showMessageForPlayerLeft);
 
   if (!currentQuestion && !quizEnded) {
     return (
@@ -595,6 +667,18 @@ export default function QuizGame() {
                 />
               </div>
             </div>
+            {showMessageForPlayerLeft && justLeftPlayer && (
+              <div className="fixed bottom-6 right-6 z-50 animate-toast-slide">
+                <div
+                  className="relative px-6 py-3 rounded-xl bg-white/10 backdrop-blur-md 
+                    border border-white/20 shadow-xl text-white w-72">
+                  <div className="absolute inset-0 bg-purple-500/20 blur-2xl -z-10" />
+                  <p className="font-semibold tracking-wide">
+                    {justLeftPlayer} left the room!
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className={`${styles.card.base} `}>
               <div className="mb-8">
