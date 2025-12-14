@@ -4,6 +4,7 @@ import { io } from "socket.io-client";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { quizGameStyles as styles } from "../styles";
 import { updatePlayerBattlesWon, updateTotalScore } from "../apis/playerApis";
+import { addPlayerTopic } from "../apis/playerTopicApis";
 
 const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
@@ -11,7 +12,7 @@ export default function QuizGame() {
   const { code } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { id, roomData } = location?.state || {};
+  const { id, roomData, topic: topicName } = location?.state || {};
 
   const [roomCode, setRoomCode] = useState("");
   const [topic, setTopic] = useState("");
@@ -245,12 +246,25 @@ export default function QuizGame() {
             email: parsedStoredPlayer.email,
           };
 
+          let battleWon = false;
           if (topPlayer.player === playerName) {
+            battleWon = true;
             const updatedTotalBattlesWon = await updatePlayerBattlesWon({
               email: playerData?.email,
             });
             console.log("Battles won updated:", updatedTotalBattlesWon);
           }
+
+          console.log(parsedStoredPlayer?.email, topicName, roomData);
+          //adding topic to player
+          const playerTopicData = {
+            email: parsedStoredPlayer?.email,
+            topicName: topicName,
+            score,
+            battleWon,
+          };
+          const playerTopicAdded = await addPlayerTopic(playerTopicData);
+          console.log("----", playerTopicAdded);
         }
       } catch (error) {
         console.error(
