@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Zap, Clock, Users, Trophy, CheckCircle, XCircle } from "lucide-react";
 import { io } from "socket.io-client";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -224,8 +224,6 @@ export default function QuizGame() {
         };
 
         const updatedTotalScore = updateTotalScore(playerData);
-
-        console.log(updatedTotalScore);
       } catch (error) {}
     }
   }, [quizEnded]);
@@ -234,8 +232,6 @@ export default function QuizGame() {
     const checkTopPlayer = async () => {
       try {
         if (finalScore?.length > 0) {
-          console.log(finalScore, "sasassasa");
-
           const topPlayer = finalScore.reduce(
             (max, current) => (current.score > max.score ? current : max),
             finalScore[0]
@@ -269,7 +265,6 @@ export default function QuizGame() {
 
   useEffect(() => {
     socket.on("playerLeft", ({ roomId, email, playerName }) => {
-      console.log("Player left:", email);
       setJustLeftPlayer(playerName);
     });
 

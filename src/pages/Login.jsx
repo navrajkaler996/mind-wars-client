@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Zap,
   ArrowLeft,
@@ -8,17 +8,29 @@ import {
   Lock,
   UserPlus,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { styles } from "../styles";
 import { loginPlayer } from "../apis/playerApis";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const playerCreated = location?.state?.playerCreated;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [showPlayerCreatedMessage, setShowPlayerCreatedMessage] =
+    useState(false);
+
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (playerCreated) {
+      setShowPlayerCreatedMessage(true);
+    }
+  }, [playerCreated]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -93,6 +105,12 @@ export default function Login() {
                 <span className="text-sm text-purple-200">Login to battle</span>
               </div>
             </div>
+
+            {showPlayerCreatedMessage && (
+              <p className="text-center text-purple-200 text-md mb-6">
+                Use your email and password to login!
+              </p>
+            )}
 
             <form
               onSubmit={handleLogin}

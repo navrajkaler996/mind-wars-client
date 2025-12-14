@@ -51,7 +51,13 @@ export default function CreatePlayer() {
       const createdPlayer = await createPlayer(player);
 
       if (createdPlayer?.player) {
-        navigate("/login");
+        // alert("Player created successfully! Use your email and password")
+
+        navigate("/login", {
+          state: {
+            playerCreated: true,
+          },
+        });
       }
 
       setLoading(false);

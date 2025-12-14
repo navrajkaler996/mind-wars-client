@@ -15,7 +15,7 @@ export async function createPlayer(playerData) {
     throw new Error(error || "Failed to create player");
   }
 
-  res.json();
+  return res.json();
 }
 
 //Login a player
