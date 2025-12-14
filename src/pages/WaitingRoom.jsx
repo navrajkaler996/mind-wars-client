@@ -32,10 +32,24 @@ export default function WaitingRoom() {
   const [players, setPlayers] = useState([]);
   const [email, setEmail] = useState();
   const [justJoinedPlayer, setJustJoinedPlayer] = useState();
+  const [justLeftPlayer, setJustLeftPlayer] = useState();
 
   const [showMessage, setShowMessage] = useState(false);
+  const [showMessageForPlayerLeft, setShowMessageForPlayerLeft] =
+    useState(false);
 
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    socket.on("playerLeft", ({ roomId, email, playerName }) => {
+      console.log("Player left:", email);
+      setJustLeftPlayer(playerName);
+    });
+
+    return () => {
+      socket.off("playerLeft");
+    };
+  }, []);
 
   useEffect(() => {
     if (!justJoinedPlayer) return;
@@ -44,16 +58,27 @@ export default function WaitingRoom() {
 
     const timer = setTimeout(() => {
       setShowMessage(false);
-    }, 30000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [justJoinedPlayer]);
 
   useEffect(() => {
+    if (!justLeftPlayer) return;
+
+    setShowMessageForPlayerLeft(true);
+
+    const timer = setTimeout(() => {
+      setShowMessageForPlayerLeft(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [justLeftPlayer]);
+
+  useEffect(() => {
     socket.emit("joinRoom", { id, playerName, email });
 
     socket.on("updatePlayers", (waitingRoomData) => {
-      console.log("---aa", waitingRoomData);
       setPlayers(waitingRoomData?.playersInRoom);
       setJustJoinedPlayer(waitingRoomData?.latestPlayer);
     });
@@ -164,13 +189,26 @@ export default function WaitingRoom() {
               </p>
             </div>
             {showMessage && justJoinedPlayer && (
-              <div className="fixed bottom-6 right-6 z-50 animate-toast-slide">
+              <div className="fixed  bottom-24 right-6 z-50 animate-toast-slide">
                 <div
                   className="relative px-6 py-3 rounded-xl bg-white/10 backdrop-blur-md 
-                    border border-white/20 shadow-xl text-white">
+                    border border-white/20 shadow-xl text-white w-72">
                   <div className="absolute inset-0 bg-purple-500/20 blur-2xl -z-10" />
                   <p className="font-semibold tracking-wide">
                     {justJoinedPlayer} joined the room!
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {showMessageForPlayerLeft && justLeftPlayer && (
+              <div className="fixed bottom-6 right-6 z-50 animate-toast-slide">
+                <div
+                  className="relative px-6 py-3 rounded-xl bg-white/10 backdrop-blur-md 
+                    border border-white/20 shadow-xl text-white w-72">
+                  <div className="absolute inset-0 bg-purple-500/20 blur-2xl -z-10" />
+                  <p className="font-semibold tracking-wide">
+                    {justLeftPlayer} left the room!
                   </p>
                 </div>
               </div>

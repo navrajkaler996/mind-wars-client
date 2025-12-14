@@ -122,6 +122,7 @@ export default function QuizGame() {
     };
 
     const handleFinalScores = (scores) => {
+      console.log("aaaa", scores);
       if (scores) {
         const sortedScores = Object.entries(scores)
           .map(([player, score]) => ({ player, score }))
