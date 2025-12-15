@@ -15,6 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { styles } from "../styles";
 import { getPlayer } from "../apis/playerApis";
+import { getPlayerTopicData } from "../apis/playerTopicApis";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -46,6 +47,10 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [playerTopicData, setPlayerTopicData] = useState([]);
+  const [playerTopicLoading, setPlayerTopicLoading] = useState(true);
+  const [playerTopicError, setPlayerTopicError] = useState(null);
+
   useEffect(() => {
     const storedPlayer = localStorage.getItem("player");
 
@@ -64,14 +69,14 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
-    if (!playerData?.email) return; // don't call API if no email
+    if (!playerData?.email) return;
 
     const fetchPlayer = async () => {
       setLoading(true);
       setError(null);
       try {
         const data = await getPlayer(playerData?.email);
-        setPlayer(data.player || data); // adjust if API returns {player: {...}}
+        setPlayer(data.player || data);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -82,11 +87,34 @@ export default function Profile() {
     fetchPlayer();
   }, [playerData]);
 
+  useEffect(() => {
+    if (!playerData?.email) return;
+
+    const fetchPlayerTopicData = async () => {
+      setPlayerTopicLoading(true);
+      setPlayerTopicError(null);
+      try {
+        const data = await getPlayerTopicData(playerData?.email);
+
+        setPlayerTopicData(data?.topics);
+      } catch (err) {
+        setPlayerTopicError(err.message);
+      } finally {
+        setPlayerTopicLoading(false);
+      }
+    };
+
+    fetchPlayerTopicData();
+  }, [playerData]);
+
   const handleBack = () => {
     navigate("/");
   };
 
-  console.log(player, error);
+  const calculateAccuracy = (topic) => {
+    if (!topic.battles || topic.battles === 0) return 0;
+    return Number(((topic.battlesWon / topic.battles) * 100).toFixed(2));
+  };
 
   return (
     <div
@@ -174,7 +202,7 @@ export default function Profile() {
                       </div>
                     </div>
                     <div className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-                      {playerData.totalBattles}
+                      {player.totalBattles}
                     </div>
                     <div className="text-sm text-slate-400 font-medium">
                       Total Battles
@@ -203,7 +231,7 @@ export default function Profile() {
                     <h2 className="text-3xl font-bold">Best Topics</h2>
                   </div>
                   <div className="space-y-4">
-                    {playerData.bestTopics.map((topic, index) => (
+                    {playerTopicData.map((topic, index) => (
                       <div
                         key={index}
                         className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:border-purple-500/50 transition-all duration-300 hover:bg-white/10 group">
@@ -222,10 +250,13 @@ export default function Profile() {
                               #{index + 1}
                             </div>
                             <div>
-                              <h3 className="text-xl font-bold group-hover:text-purple-300 transition-colors">
-                                {topic.topic}
+                              <h3 className="text-md sm:text-xl font-bold group-hover:text-purple-300 transition-colors">
+                                {topic.topicName}
                               </h3>
-                              <p className="text-sm text-slate-400">
+                              <p className="text-sm sm:text-xs text-slate-400">
+                                {topic.battlesWon} battles won
+                              </p>
+                              <p className="text-sm sm:text-xs text-slate-400">
                                 {topic.battles} battles played
                               </p>
                             </div>
@@ -239,13 +270,15 @@ export default function Profile() {
                             <div className="flex items-center justify-between text-sm mb-2">
                               <span className="text-slate-400">Accuracy</span>
                               <span className="font-semibold text-cyan-400">
-                                {topic.accuracy}%
+                                {calculateAccuracy(topic)}%
                               </span>
                             </div>
                             <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
                               <div
                                 className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
-                                style={{ width: `${topic.accuracy}%` }}
+                                style={{
+                                  width: `${calculateAccuracy(topic)}%`,
+                                }}
                               />
                             </div>
                           </div>

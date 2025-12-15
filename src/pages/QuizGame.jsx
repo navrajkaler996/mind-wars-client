@@ -14,6 +14,8 @@ export default function QuizGame() {
   const navigate = useNavigate();
   const { id, roomData, topic: topicName } = location?.state || {};
 
+  const hasProcessedScoreRef = useRef(false);
+
   const [roomCode, setRoomCode] = useState("");
   const [topic, setTopic] = useState("");
   const [questions, setQuestions] = useState([]);
@@ -40,6 +42,10 @@ export default function QuizGame() {
   const [justLeftPlayer, setJustLeftPlayer] = useState();
   const [showMessageForPlayerLeft, setShowMessageForPlayerLeft] =
     useState(false);
+
+  const [playerTopicAdded, setPlayerTopicAdded] = useState(false);
+
+  const [hasProcessedFinalScore, setHasProcessedFinalScore] = useState(false);
 
   //User and roomData is coming via navigate state
   useEffect(() => {
@@ -230,52 +236,64 @@ export default function QuizGame() {
   }, [quizEnded]);
 
   useEffect(() => {
+    if (
+      hasProcessedScoreRef.current ||
+      !finalScore ||
+      finalScore.length === 0
+    ) {
+      console.log("Skipping - already processed or no scores");
+      return;
+    }
+
     const checkTopPlayer = async () => {
+      if (hasProcessedScoreRef.current) {
+        return;
+      }
+      hasProcessedScoreRef.current = true;
+
       try {
-        if (finalScore?.length > 0) {
-          const topPlayer = finalScore.reduce(
-            (max, current) => (current.score > max.score ? current : max),
-            finalScore[0]
-          );
-
-          const storedPlayer = localStorage.getItem("player");
-          const parsedStoredPlayer = JSON.parse(storedPlayer);
-
-          const playerData = {
-            newScore: score,
-            email: parsedStoredPlayer.email,
-          };
-
-          let battleWon = false;
-          if (topPlayer.player === playerName) {
-            battleWon = true;
-            const updatedTotalBattlesWon = await updatePlayerBattlesWon({
-              email: playerData?.email,
-            });
-            console.log("Battles won updated:", updatedTotalBattlesWon);
-          }
-
-          console.log(parsedStoredPlayer?.email, topicName, roomData);
-          //adding topic to player
-          const playerTopicData = {
-            email: parsedStoredPlayer?.email,
-            topicName: topicName,
-            score,
-            battleWon,
-          };
-          const playerTopicAdded = await addPlayerTopic(playerTopicData);
-          console.log("----", playerTopicAdded);
-        }
-      } catch (error) {
-        console.error(
-          "Error in determining top player or updating battles won:",
-          error
+        const topPlayer = finalScore.reduce(
+          (max, current) => (current.score > max.score ? current : max),
+          finalScore[0]
         );
+
+        const storedPlayer = localStorage.getItem("player");
+
+        // Only proceed if user is logged in
+        if (!storedPlayer) {
+          console.log("No score update for guest player");
+          return;
+        }
+
+        const parsedStoredPlayer = JSON.parse(storedPlayer);
+
+        let battleWon = false;
+        if (topPlayer.player === playerName) {
+          battleWon = true;
+          console.log("🏆 You won! Updating battles won...");
+          const updatedTotalBattlesWon = await updatePlayerBattlesWon({
+            email: parsedStoredPlayer?.email,
+          });
+        }
+
+        // Add topic to player
+
+        const playerTopicData = {
+          email: parsedStoredPlayer?.email,
+          topicName: topicName,
+          score,
+          battleWon,
+        };
+
+        const addedPlayerTopic = await addPlayerTopic(playerTopicData);
+        console.log("Player topic added:", addedPlayerTopic);
+      } catch (error) {
+        console.error("Error processing final scores:", error);
       }
     };
 
     checkTopPlayer();
-  }, [finalScore]);
+  }, [finalScore, playerName, topicName, score]);
 
   useEffect(() => {
     socket.on("playerLeft", ({ roomId, email, playerName }) => {
