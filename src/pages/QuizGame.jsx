@@ -6,7 +6,7 @@ import { quizGameStyles as styles } from "../styles";
 import { updatePlayerBattlesWon, updateTotalScore } from "../apis/playerApis";
 import { addPlayerTopic } from "../apis/playerTopicApis";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
+const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
 
 export default function QuizGame() {
   const { code } = useParams();

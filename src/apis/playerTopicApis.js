@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL_DEV;
+const API_URL = import.meta.env.VITE_API_URL;
 
 export async function addPlayerTopic(topicData) {
   const res = await fetch(`${API_URL}/playertopics/add`, {
