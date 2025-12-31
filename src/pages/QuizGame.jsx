@@ -1,12 +1,26 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Zap, Clock, Users, Trophy, CheckCircle, XCircle } from "lucide-react";
+import {
+  Zap,
+  Clock,
+  Users,
+  Trophy,
+  CheckCircle,
+  XCircle,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { io } from "socket.io-client";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { quizGameStyles as styles } from "../styles";
 import { updatePlayerBattlesWon, updateTotalScore } from "../apis/playerApis";
 import { addPlayerTopic } from "../apis/playerTopicApis";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
+import music from "../../assets/music.mp3";
+import correctSound from "../../assets/correct.mp3";
+import incorrectSound from "../../assets/incorrect.mp3";
+import clock from "../../assets/clock.mp3";
+
+const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
 
 export default function QuizGame() {
   const { code } = useParams();
@@ -15,6 +29,10 @@ export default function QuizGame() {
   const { id, roomData, topic: topicName } = location?.state || {};
 
   const hasProcessedScoreRef = useRef(false);
+  const audioRef = useRef(null);
+  const correctSoundRef = useRef(null);
+  const incorrectSoundRef = useRef(null);
+  const clockSoundRef = useRef(null);
 
   const [roomCode, setRoomCode] = useState("");
   const [topic, setTopic] = useState("");
@@ -46,6 +64,8 @@ export default function QuizGame() {
   const [playerTopicAdded, setPlayerTopicAdded] = useState(false);
 
   const [hasProcessedFinalScore, setHasProcessedFinalScore] = useState(false);
+
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
   //User and roomData is coming via navigate state
   useEffect(() => {
@@ -347,6 +367,57 @@ export default function QuizGame() {
     return () => clearTimeout(timer);
   }, [justLeftPlayer]);
 
+  useEffect(() => {
+    // Initialize audio
+    if (audioRef.current) {
+      audioRef.current.volume = 0.1; // Set volume to 30%
+      audioRef.current.loop = true; // Loop the music
+
+      // Try to play music on component mount
+      const playMusic = async () => {
+        try {
+          await audioRef.current.play();
+          setIsMusicPlaying(true);
+        } catch (error) {
+          // Autoplay blocked - user needs to interact first
+          console.log("Autoplay blocked, waiting for user interaction");
+        }
+      };
+
+      playMusic();
+    }
+
+    return () => {
+      // Cleanup: pause music when component unmounts
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
+
+  const playSound = (audioRef) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.volume = 0.3;
+      audioRef.current.play().catch((error) => {
+        console.log("Sound play failed:", error);
+      });
+    }
+  };
+
+  const stopSound = (audioRef) => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  useEffect(() => {
+    if (timeLeft <= 3 && timeLeft > 0) {
+      playSound(clockSoundRef);
+    } else stopSound(clockSoundRef);
+  }, [timeLeft]);
+
   const handleTimeout = () => {
     setAnswered(true);
     setShowCorrectAnswer(true);
@@ -361,11 +432,13 @@ export default function QuizGame() {
 
     const isCorrect = optionText === currentQuestion.answer;
     if (isCorrect) {
+      playSound(correctSoundRef);
       setShowCelebration(true);
       const points = Math.round(100 + timeLeft * 3);
       setScore((prev) => prev + points);
       setCorrectAnswersCount((prev) => prev + 1);
     } else {
+      playSound(incorrectSoundRef);
       setShowWrongEffect(true);
       setTimeout(() => {
         setShowWrongEffect(false);
@@ -402,6 +475,18 @@ export default function QuizGame() {
     if (timeLeft > 7) return "text-green-400";
     if (timeLeft > 3) return "text-yellow-400";
     return "text-red-400";
+  };
+
+  const toggleMusic = () => {
+    if (audioRef.current) {
+      if (isMusicPlaying) {
+        audioRef.current.pause();
+        setIsMusicPlaying(false);
+      } else {
+        audioRef.current.play();
+        setIsMusicPlaying(true);
+      }
+    }
   };
 
   if (!currentQuestion && !quizEnded) {
@@ -562,6 +647,22 @@ export default function QuizGame() {
       </div>
 
       <div className="relative z-10">
+        <audio ref={audioRef} src={music} preload="auto" />
+        <audio ref={correctSoundRef} src={correctSound} preload="auto" />
+        <audio ref={incorrectSoundRef} src={incorrectSound} preload="auto" />
+        <audio ref={clockSoundRef} src={clock} preload="auto" />
+
+        {/* Music Control Button - Fixed position */}
+        <button
+          onClick={toggleMusic}
+          className="fixed bottom-6 left-6 z-50 w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 transition-all duration-300 group"
+          title={isMusicPlaying ? "Mute Music" : "Play Music"}>
+          {isMusicPlaying ? (
+            <Volume2 className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+          ) : (
+            <VolumeX className="w-6 h-6 text-white group-hover:scale-110 transition-transform" />
+          )}
+        </button>
         {/* Celebration Effect */}
         {showCelebration && (
           <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">

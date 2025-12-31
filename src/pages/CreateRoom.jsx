@@ -337,7 +337,8 @@ export default function CreateRoom() {
                   <p>or</p>
                   <button
                     onClick={() => setPlayeAsGuest(true)}
-                    className={`w-1/2 ${styles.button.secondary} text-lg`}>
+                    className={`w-1/2 ${styles.button.secondary} text-lg`}
+                    disabled={true}>
                     Play as a guest
                   </button>
 
