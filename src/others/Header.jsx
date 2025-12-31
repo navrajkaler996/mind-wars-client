@@ -29,9 +29,11 @@ export default function Header() {
         </div>
 
         <button
-          onClick={() => navigate("/profile")}
+          onClick={() =>
+            loggedInPlayer ? navigate("/profile") : navigate("/login")
+          }
           className={`px-6 py-2 ${styles.bg.glass} rounded-lg hover:bg-white/20 transition-all duration-300 border border-white/20`}>
-          {loggedInPlayer?.name}
+          {loggedInPlayer ? loggedInPlayer.name : "Login"}
         </button>
       </div>
     </header>
