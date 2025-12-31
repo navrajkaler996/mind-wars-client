@@ -10,14 +10,17 @@ import {
   User,
   ChevronDown,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { styles } from "../styles";
 import { createRoom } from "../apis/roomApis";
 import Header from "../others/Header";
 import { searchEquivalentTopics } from "../apis/topicApis";
+import { getPracticeQuestions } from "../apis/practiceApis";
 
 export default function CreateRoom() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const practiceAlone = state?.practiceAlone;
 
   const [playerName, setPlayerName] = useState("");
   const [roomName, setRoomName] = useState("");
@@ -107,6 +110,8 @@ export default function CreateRoom() {
     setShowDropdown(false);
   };
 
+  console.log("aasasa", practiceAlone);
+
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     if (!roomName.trim() || !topic.trim()) return;
@@ -128,6 +133,7 @@ export default function CreateRoom() {
         state: {
           roomData: { ...response, room, playerName, email },
           roomCode: createdRoom?.code,
+          practiceAlone: practiceAlone ?? false,
         },
       });
       setLoading(false);
@@ -139,6 +145,33 @@ export default function CreateRoom() {
   };
 
   const handleBack = () => {};
+
+  const handlePractice = async (e) => {
+    e.preventDefault();
+    if (!topic.trim()) return;
+
+    const topicData = {
+      topic,
+      numQuestions,
+    };
+
+    try {
+      setLoading(true);
+      const response = await getPracticeQuestions(topicData);
+      const generatedQuestions = response?.questions;
+
+      navigate(`/practice`, {
+        state: {
+          generatedQuestions,
+        },
+      });
+      setLoading(false);
+    } catch (error) {
+      console.error("Failed:", error);
+      alert("Failed. Please try again.");
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -171,7 +204,7 @@ export default function CreateRoom() {
             </div>
 
             <div className={`${styles.card.base} space-y-6`}>
-              {playAsGuest || user ? (
+              {playAsGuest || user || practiceAlone ? (
                 <>
                   <div>
                     <label className="flex items-center gap-2 text-sm font-semibold mb-3">
@@ -196,20 +229,22 @@ export default function CreateRoom() {
                     )}
                   </div>
 
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-semibold mb-3">
-                      <Users className="w-4 h-4 text-purple-400" />
-                      Room Name
-                    </label>
-                    <input
-                      type="text"
-                      value={roomName}
-                      onChange={(e) => setRoomName(e.target.value)}
-                      placeholder="e.g., Epic Friday Quiz"
-                      className={styles.input.base}
-                      maxLength={30}
-                    />
-                  </div>
+                  {!practiceAlone && (
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-semibold mb-3">
+                        <Users className="w-4 h-4 text-purple-400" />
+                        Room Name
+                      </label>
+                      <input
+                        type="text"
+                        value={roomName}
+                        onChange={(e) => setRoomName(e.target.value)}
+                        placeholder="e.g., Epic Friday Quiz"
+                        className={styles.input.base}
+                        maxLength={30}
+                      />
+                    </div>
+                  )}
 
                   <div className="relative" ref={dropdownRef}>
                     <label className="flex items-center gap-2 text-sm font-semibold mb-3">
@@ -308,8 +343,12 @@ export default function CreateRoom() {
                   </div>
 
                   <button
-                    onClick={handleCreateRoom}
-                    disabled={!roomName.trim() || !topic.trim() || loading}
+                    onClick={practiceAlone ? handlePractice : handleCreateRoom}
+                    disabled={
+                      practiceAlone
+                        ? !topic.trim() || loading
+                        : !roomName.trim() || !topic.trim() || loading
+                    }
                     className={`w-full ${styles.button.primary} flex items-center justify-center gap-2 mt-6`}>
                     {loading ? (
                       <>
