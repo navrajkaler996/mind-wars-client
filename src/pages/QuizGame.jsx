@@ -20,7 +20,7 @@ import correctSound from "../../assets/correct.mp3";
 import incorrectSound from "../../assets/incorrect.mp3";
 import clock from "../../assets/clock.mp3";
 
-const socket = io(import.meta.env.VITE_SOCKET_URL_DEV);
+const socket = io(import.meta.env.VITE_SOCKET_URL_PROD);
 
 export default function QuizGame() {
   const { code } = useParams();
